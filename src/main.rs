@@ -10,6 +10,9 @@ async fn main() -> Result<()> {
 
     let address = format!("127.0.0.1:{}", config.application_port);
     let listener = TcpListener::bind(address).context("Failed to bind to address")?;
-    println!("Server running on http://127.0.0.1:{}", config.application_port);
+    println!(
+        "Server running on http://127.0.0.1:{}",
+        config.application_port
+    );
     Ok(run(listener)?.await?)
 }
