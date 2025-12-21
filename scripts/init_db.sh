@@ -1,13 +1,4 @@
 #!/usr/bin/env bash
-set -eo pipefail
-set -x
-
-if !command -v sqlx &> /dev/null; then
-    echo "sqlx could not be found, please install it"
-    exit 1
-fi
-
-# Check if a custom parameter has been set, if not, set a default value
 
 DB_PORT="${POSTGRES_PORT:-5432}"
 SUPERUSER="${SUPERUSER:-postgres}"
@@ -15,11 +6,10 @@ SUPERUSER_PWD="${SUPERUSER_PWD:-postgres}"
 APP_USER="${APP_USER:=app}"
 APP_USER_PWD="${APP_USER_PWD:=secret}"
 APP_DB_NAME="${APP_DB_NAME:=newsletter}"
-
 CONTAINER_NAME="postgres"
+in_ci="false"
 
-# Remove any existing container with the same name
-if [ ! "$(docker ps -aq -f name=${CONTAINER_NAME})" ]; then
+function setup_db_container() {
     docker run \
         --env POSTGRES_USER="${SUPERUSER}" \
         --env POSTGRES_PASSWORD="${SUPERUSER_PWD}" \
@@ -31,7 +21,7 @@ if [ ! "$(docker ps -aq -f name=${CONTAINER_NAME})" ]; then
     until docker exec $CONTAINER_NAME pg_isready; do
         sleep 1
     done
-    
+
     # Create the application user
     CREATE_QUERY="CREATE USER ${APP_USER} WITH PASSWORD '${APP_USER_PWD}';"
     docker exec -it "${CONTAINER_NAME}" psql -U "${SUPERUSER}" -c "${CREATE_QUERY}"
@@ -39,11 +29,35 @@ if [ ! "$(docker ps -aq -f name=${CONTAINER_NAME})" ]; then
     # Grant create db privileges to the app user
     GRANT_QUERY="ALTER USER ${APP_USER} CREATEDB;"
     docker exec -it "${CONTAINER_NAME}" psql -U "${SUPERUSER}" -c "${GRANT_QUERY}"
+}
 
+set -eo pipefail
+set -x
+
+
+if [ -n "$CI" ]; then
+    in_ci="true"
+fi
+
+if !command -v sqlx &> /dev/null; then
+    echo "sqlx could not be found, please install it"
+    exit 1
+fi
+
+# if the postgres container doesn't already exist and we are in CI as if we are not in CI we will
+# be connecting to supabase db and don't need to spin up a local container
+if [ ! "$(docker ps -aq -f name=${CONTAINER_NAME})"  ] && [ in_ci == "true" ]; then
+    setup_db_container
 fi
 
 >&2 echo "Postgres is up and running on port ${DB_PORT}!"
 
-source .env
+if [ "$in_ci" = "true" ]; then
+    export DATABASE_URL="postgres://${APP_USER}:${APP_USER_PWD}@localhost:${DB_PORT}/${APP_DB_NAME}"
+    export SQLX_OFFLINE=true
+else
+    source .env
+fi
+
 sqlx database create
 sqlx migrate run
