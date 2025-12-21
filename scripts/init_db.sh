@@ -7,6 +7,7 @@ APP_USER="${APP_USER:=app}"
 APP_USER_PWD="${APP_USER_PWD:=secret}"
 APP_DB_NAME="${APP_DB_NAME:=newsletter}"
 CONTAINER_NAME="postgres"
+SKIP_DOCKER="${SKIP_DOCKER:=false}"
 in_ci="false"
 
 function setup_db_container() {
@@ -46,7 +47,7 @@ fi
 
 # if the postgres container doesn't already exist and we are in CI as if we are not in CI we will
 # be connecting to supabase db and don't need to spin up a local container
-if [ ! "$(docker ps -aq -f name=${CONTAINER_NAME})"  ] && [ in_ci == "true" ]; then
+if [[ ! "$(docker ps -aq -f name=${CONTAINER_NAME})" ]] && [[ in_ci == "true" ]] && [[ SKIP_DOCKER == "false" ]]; then
     setup_db_container
 fi
 
@@ -54,7 +55,6 @@ fi
 
 if [ "$in_ci" = "true" ]; then
     export DATABASE_URL="postgres://${APP_USER}:${APP_USER_PWD}@localhost:${DB_PORT}/${APP_DB_NAME}"
-    export SQLX_OFFLINE=true
 else
     source .env
 fi
