@@ -23,6 +23,12 @@ jobs:
     runs-on: ubuntu-latest
     env:
       DATABASE_URL: postgresql://app:secret@localhost:5432/newsletter
+      APP_APPLICATION_PORT: 8000
+      APP_DATABASE__HOST: localhost
+      APP_DATABASE__PORT: 5432
+      APP_DATABASE__USERNAME: app
+      APP_DATABASE__PASSWORD: secret
+      APP_DATABASE__DATABASE_NAME: newsletter
     services:
       postgres:
         image: postgres:14
@@ -95,6 +101,12 @@ jobs:
     runs-on: ubuntu-latest
     env:
       DATABASE_URL: postgresql://app:secret@localhost:5432/newsletter
+      APP_APPLICATION_PORT: 8000
+      APP_DATABASE__HOST: localhost
+      APP_DATABASE__PORT: 5432
+      APP_DATABASE__USERNAME: app
+      APP_DATABASE__PASSWORD: secret
+      APP_DATABASE__DATABASE_NAME: newsletter
     services:
       postgres:
         image: postgres:14

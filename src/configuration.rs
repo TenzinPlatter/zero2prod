@@ -37,6 +37,11 @@ pub fn get_configuration() -> Result<Settings, config::ConfigError> {
             "configuration.yaml",
             config::FileFormat::Yaml,
         ))
+        .add_source(
+            config::Environment::with_prefix("APP")
+                .prefix_separator("_")
+                .separator("__"),
+        )
         .build()?;
     settings.try_deserialize::<Settings>()
 }
