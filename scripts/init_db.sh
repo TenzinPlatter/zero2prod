@@ -11,6 +11,10 @@ SKIP_DOCKER="${SKIP_DOCKER:=false}"
 in_ci="false"
 
 function setup_db_container() {
+    if [[ "$SKIP_DOCKER" == "true" ]]; then
+        return
+    fi
+
     docker run \
         --env POSTGRES_USER="${SUPERUSER}" \
         --env POSTGRES_PASSWORD="${SUPERUSER_PWD}" \
@@ -47,7 +51,7 @@ fi
 
 # if the postgres container doesn't already exist and we are in CI as if we are not in CI we will
 # be connecting to supabase db and don't need to spin up a local container
-if [[ ! "$(docker ps -aq -f name=${CONTAINER_NAME})" ]] && [[ in_ci == "true" ]] && [[ SKIP_DOCKER == "false" ]]; then
+if [[ ! "$(docker ps -aq -f name=${CONTAINER_NAME})" ]] && [[ in_ci == "true" ]]; then
     setup_db_container
 fi
 

@@ -22,7 +22,7 @@ jobs:
     name: Test
     runs-on: ubuntu-latest
     env:
-          DATABASE_URL: postgresql://postgres:password@localhost:5432/postgres
+      DATABASE_URL: postgresql://app:secret@localhost:5432/newsletter
     services:
       postgres:
         image: postgres:14
@@ -93,6 +93,8 @@ jobs:
   coverage:
     name: Code coverage
     runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: postgresql://app:secret@localhost:5432/newsletter
     services:
       postgres:
         image: postgres:14
