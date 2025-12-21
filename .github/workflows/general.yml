@@ -21,6 +21,8 @@ jobs:
   test:
     name: Test
     runs-on: ubuntu-latest
+    env:
+          DATABASE_URL: postgresql://postgres:password@localhost:5432/postgres
     services:
       postgres:
         image: postgres:14
@@ -28,7 +30,6 @@ jobs:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: password
           POSTGRES_DB: postgres
-          DATABASE_URL: postgresql://postgres:password@localhost:5432/postgres
         ports:
           - 5432:5432
     steps:
