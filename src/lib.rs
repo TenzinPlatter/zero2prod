@@ -1,5 +1,5 @@
 use anyhow::{Context, Result};
-use sqlx::{ConnectOptions, PgPool};
+use sqlx::PgPool;
 
 use std::net::TcpListener;
 
@@ -15,7 +15,6 @@ pub struct AppHandle {
     pub conn: PgPool,
 }
 
-// TODO: change the return type to be a custom struct
 pub async fn spawn_app() -> Result<AppHandle> {
     let config = get_configuration().context("Failed to read configuration")?;
     let address = format!("127.0.0.1:{}", config.application_port);

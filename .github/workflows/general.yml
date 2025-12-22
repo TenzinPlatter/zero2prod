@@ -21,6 +21,8 @@ jobs:
   awesome_test:
     name: Awesome Test
     runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: postgresql://app:secret@localhost:5432/newsletter
     steps:
       - name: Check out repository code
         uses: actions/checkout@v4

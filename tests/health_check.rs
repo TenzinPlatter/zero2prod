@@ -1,5 +1,4 @@
-use sqlx::{Connection, PgConnection};
-use zero2prod::{configuration::get_configuration, spawn_app};
+use zero2prod::spawn_app;
 
 // Initialize tracing once for all tests
 static TRACING: std::sync::LazyLock<()> = std::sync::LazyLock::new(|| {
