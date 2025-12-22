@@ -1,6 +1,6 @@
 use actix_web::{App, HttpServer, dev::Server, web};
 use anyhow::Result;
-use sqlx::{PgPool};
+use sqlx::PgPool;
 
 use std::net::TcpListener;
 

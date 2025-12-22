@@ -31,11 +31,9 @@ pub async fn spawn_app() -> Result<AppHandle> {
     let server = run(listener, conn.clone()).expect("Failed to bind address");
     let handle = tokio::spawn(server);
 
-    Ok(
-        AppHandle {
-            handle,
-            conn,
-            address: format!("http://127.0.0.1:{}", port),
-        }
-    )
+    Ok(AppHandle {
+        handle,
+        conn,
+        address: format!("http://127.0.0.1:{}", port),
+    })
 }

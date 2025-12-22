@@ -1,4 +1,4 @@
-use anyhow::{Result};
+use anyhow::Result;
 
 use zero2prod::spawn_app;
 

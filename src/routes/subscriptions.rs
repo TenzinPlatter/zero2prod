@@ -25,11 +25,12 @@ pub async fn subscribe(form: web::Form<FormData>, conn: web::Data<PgPool>) -> Ht
         Utc::now(),
     )
     .execute(conn.as_ref())
-    .await {
+    .await
+    {
         Ok(_) => HttpResponse::Ok().finish(),
         Err(e) => {
             error!("Failed to execute query: {}", e);
             HttpResponse::InternalServerError().finish()
-        },
+        }
     }
 }
