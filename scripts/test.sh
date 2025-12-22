@@ -1,6 +1,6 @@
 export CONTAINER_NAME="postgres_test"
 export POSTGRES_PORT="12345"
-export DATABASE_URL = "postgresql://app:secret@localhost:12345/newsletter"
+export DATABASE_URL="postgresql://app:secret@localhost:12345/newsletter"
 
 if [[ ! -f ./scripts/init_db.sh ]]; then
     echo "Please run the testing script from the project root"
@@ -15,7 +15,7 @@ if [[ -z "${CI}" ]]; then
 else
     # overload port and url in CI as we don't need to worry about port being in use
     export POSTGRES_PORT="5432"
-    export DATABASE_URL = "postgresql://app:secret@localhost:5432/newsletter"
+    export DATABASE_URL="postgresql://app:secret@localhost:5432/newsletter"
     export CONFIG_FILE="configuration.ci.yaml"
 fi
 
