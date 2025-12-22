@@ -6,12 +6,14 @@ SUPERUSER_PWD="${SUPERUSER_PWD:-postgres}"
 APP_USER="${APP_USER:=app}"
 APP_USER_PWD="${APP_USER_PWD:=secret}"
 APP_DB_NAME="${APP_DB_NAME:=newsletter}"
-CONTAINER_NAME="postgres"
+CONTAINER_NAME="${CONTAINER_NAME:=postgres}"
 SKIP_DOCKER="${SKIP_DOCKER:=false}"
 in_ci="false"
+testing="false"
 
 function setup_db_container() {
-    if [[ "$SKIP_DOCKER" == "true" ]]; then
+    if [[ "$SKIP_DOCKER" == "true" ]] || [[ "$(docker ps -aq -f name=${CONTAINER_NAME})" ]]; then
+        echo Skipping docker setup
         return
     fi
 
@@ -29,19 +31,23 @@ function setup_db_container() {
 
     # Create the application user
     CREATE_QUERY="CREATE USER ${APP_USER} WITH PASSWORD '${APP_USER_PWD}';"
-    docker exec -it "${CONTAINER_NAME}" psql -U "${SUPERUSER}" -c "${CREATE_QUERY}"
+    docker exec "${CONTAINER_NAME}" psql -U "${SUPERUSER}" -c "${CREATE_QUERY}"
 
     # Grant create db privileges to the app user
     GRANT_QUERY="ALTER USER ${APP_USER} CREATEDB;"
-    docker exec -it "${CONTAINER_NAME}" psql -U "${SUPERUSER}" -c "${GRANT_QUERY}"
+    docker exec "${CONTAINER_NAME}" psql -U "${SUPERUSER}" -c "${GRANT_QUERY}"
 }
 
+# ENTRYPOINT
 set -eo pipefail
 set -x
 
-
 if [ -n "$CI" ]; then
     in_ci="true"
+fi
+
+if [ -n "$TESTING" ]; then
+    testing="true"
 fi
 
 if !command -v sqlx &> /dev/null; then
@@ -51,13 +57,13 @@ fi
 
 # if the postgres container doesn't already exist and we are in CI as if we are not in CI we will
 # be connecting to supabase db and don't need to spin up a local container
-if [[ ! "$(docker ps -aq -f name=${CONTAINER_NAME})" ]] && [[ in_ci == "true" ]]; then
+if [[ "$in_ci" == "true" ]] || [[ "$testing" == "true" ]]; then
     setup_db_container
 fi
 
->&2 echo "Postgres is up and running on port ${DB_PORT}!"
+>&2 echo "Postgres is up and running on port ${DB_PORT}"
 
-if [ "$in_ci" = "true" ]; then
+if [[ "$in_ci" == "true" ]] || [[ "$testing" == "true" ]]; then
     export DATABASE_URL="postgres://${APP_USER}:${APP_USER_PWD}@localhost:${DB_PORT}/${APP_DB_NAME}"
 else
     source .env

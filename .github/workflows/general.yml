@@ -18,17 +18,35 @@ env:
   APP_DB_NAME: newsletter
 
 jobs:
+  awesome_test:
+    name: Awesome Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v4
+
+      - name: Install the Rust toolchain
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+
+      - name: Install sqlx-cli
+        run: cargo install sqlx-cli
+          --version=${{ env.SQLX_VERSION }}
+          --features ${{ env.SQLX_FEATURES }}
+          --no-default-features
+          --locked
+
+      - name: Install nextest
+        run: cargo install nextest --locked
+
+      - name: Run Tests
+        run: ./scripts/test.sh
+
+
   test:
     name: Test
     runs-on: ubuntu-latest
     env:
       DATABASE_URL: postgresql://app:secret@localhost:5432/newsletter
-      APP_APPLICATION_PORT: 8000
-      APP_DATABASE__HOST: localhost
-      APP_DATABASE__PORT: 5432
-      APP_DATABASE__USERNAME: app
-      APP_DATABASE__PASSWORD: secret
-      APP_DATABASE__DATABASE_NAME: newsletter
     services:
       postgres:
         image: postgres:14

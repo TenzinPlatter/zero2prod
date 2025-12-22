@@ -1,3 +1,4 @@
 .env
 target
-configuration.yaml
+configuration.prod.yaml
+configuration.local.yaml
