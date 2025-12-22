@@ -19,7 +19,8 @@ pub async fn spawn_app() -> Result<AppHandle> {
     let config = get_configuration().context("Failed to read configuration")?;
     let address = format!("127.0.0.1:{}", config.application_port);
 
-    let listener = TcpListener::bind(address).expect("Failed to bind random port");
+    let listener =
+        TcpListener::bind(&address).context(format!("Failed to bind to address: {}", address))?;
     let port = listener.local_addr().unwrap().port();
 
     let conn = {

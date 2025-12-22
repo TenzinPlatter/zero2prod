@@ -13,6 +13,9 @@ set -x
 if [[ -z "${CI}" ]]; then
     export CONFIG_FILE="configuration.local.yaml"
 else
+    # overload port and url in CI as we don't need to worry about port being in use
+    export POSTGRES_PORT="5432"
+    export DATABASE_URL = "postgresql://app:secret@localhost:5432/newsletter"
     export CONFIG_FILE="configuration.ci.yaml"
 fi
 
@@ -22,4 +25,10 @@ if [[ $(docker ps -aq -f name=${CONTAINER_NAME}) ]]; then
 fi
 
 TESTING=true ./scripts/init_db.sh
-TEST_LOG=1 cargo nextest run
+if [[ -z "${CI}" ]]; then
+    TEST_LOG=1 cargo nextest run
+else
+    # don't use nextest in CI to avoid installing it every time
+    TEST_LOG=1 cargo test run
+fi
+
