@@ -25,9 +25,12 @@ function setup_db_container() {
         --detach \
         postgres -N 1000
 
+    set +x
+    echo "Waiting for Postgres to be ready..."
     until docker exec $CONTAINER_NAME pg_isready; do
         sleep 1
     done
+    set -x
 
     # Create the application user
     CREATE_QUERY="CREATE USER ${APP_USER} WITH PASSWORD '${APP_USER_PWD}';"

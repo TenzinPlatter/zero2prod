@@ -23,15 +23,18 @@ impl DatabaseSettings {
         )
     }
 
-    pub fn connection_string_without_db(&self) -> String {
+    pub fn postgres_connection_string(&self) -> String {
         format!(
-            "postgres://{}:{}@{}:{}",
+            "postgres://{}:{}@{}:{}/postgres",
             self.username, self.password, self.host, self.port
         )
     }
 }
 
-pub fn get_configuration() -> Result<Settings, config::ConfigError> {
+pub fn get_configuration<F>(apply_overrides: F) -> Result<Settings, config::ConfigError>
+where
+    F: Fn(Settings) -> Settings,
+{
     let config_path = std::env::var("CONFIG_FILE")
         .ok()
         .unwrap_or("configuration.yaml".to_string());
@@ -44,5 +47,7 @@ pub fn get_configuration() -> Result<Settings, config::ConfigError> {
                 .separator("__"),
         )
         .build()?;
-    settings.try_deserialize::<Settings>()
+
+    let settings = settings.try_deserialize::<Settings>()?;
+    Ok(apply_overrides(settings))
 }

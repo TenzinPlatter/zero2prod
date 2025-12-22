@@ -1,4 +1,5 @@
-use zero2prod::spawn_app;
+use anyhow::Result;
+use zero2prod::spawn_test_app;
 
 // Initialize tracing once for all tests
 static TRACING: std::sync::LazyLock<()> = std::sync::LazyLock::new(|| {
@@ -18,10 +19,10 @@ static TRACING: std::sync::LazyLock<()> = std::sync::LazyLock::new(|| {
 });
 
 #[tokio::test]
-async fn health_check_works() {
+async fn health_check_works() -> Result<()> {
     std::sync::LazyLock::force(&TRACING);
     // Arrange
-    let app = spawn_app().await.expect("Failed to spawn app.");
+    let app = spawn_test_app().await?;
     // We need to bring in `reqwest`
     // to perform HTTP requests against our application.
     let client = reqwest::Client::new();
@@ -29,18 +30,18 @@ async fn health_check_works() {
     let response = client
         .get(format!("{}/health_check", &app.address))
         .send()
-        .await
-        .expect("Failed to execute request.");
+        .await?;
     // Assert
     assert!(response.status().is_success());
     assert_eq!(Some(0), response.content_length());
+    Ok(())
 }
 
 #[tokio::test]
-async fn subscribe_returns_a_200_for_valid_form_data() {
+async fn subscribe_returns_a_200_for_valid_form_data() -> Result<()> {
     std::sync::LazyLock::force(&TRACING);
     // Arrange
-    let app = spawn_app().await.expect("Failed to spawn app.");
+    let app = spawn_test_app().await?;
 
     // Act
     let client = reqwest::Client::new();
@@ -50,25 +51,24 @@ async fn subscribe_returns_a_200_for_valid_form_data() {
         .header("Content-Type", "application/x-www-form-urlencoded")
         .body(body)
         .send()
-        .await
-        .expect("Failed to execute request.");
+        .await?;
     // Assert
     assert_eq!(200, response.status().as_u16());
 
     let saved = sqlx::query!("SELECT email, name FROM subscriptions",)
         .fetch_one(&app.conn)
-        .await
-        .expect("Failed to fetch saved subscription.");
+        .await?;
 
     assert_eq!(saved.email, "ursula_le_guin@gmail.com");
     assert_eq!(saved.name, "le guin");
+    Ok(())
 }
 
 #[tokio::test]
-async fn subscribe_returns_a_400_when_data_is_missing() {
+async fn subscribe_returns_a_400_when_data_is_missing() -> Result<()> {
     std::sync::LazyLock::force(&TRACING);
     // Arrange
-    let app = spawn_app().await.expect("Failed to spawn app.");
+    let app = spawn_test_app().await?;
     let client = reqwest::Client::new();
     let test_cases = vec![
         ("name=le%20guin", "missing the email"),
@@ -83,8 +83,7 @@ async fn subscribe_returns_a_400_when_data_is_missing() {
             .header("Content-Type", "application/x-www-form-urlencoded")
             .body(invalid_body)
             .send()
-            .await
-            .expect("Failed to execute request.");
+            .await?;
 
         // Assert
         assert_eq!(
@@ -95,4 +94,5 @@ async fn subscribe_returns_a_400_when_data_is_missing() {
             error_message
         );
     }
+    Ok(())
 }
