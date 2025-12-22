@@ -50,7 +50,7 @@ if [ -n "$TESTING" ]; then
     testing="true"
 fi
 
-if !command -v sqlx &> /dev/null; then
+if ! command -v sqlx &> /dev/null; then
     echo "sqlx could not be found, please install it"
     exit 1
 fi

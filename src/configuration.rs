@@ -35,7 +35,6 @@ pub fn get_configuration() -> Result<Settings, config::ConfigError> {
     let config_path = std::env::var("CONFIG_FILE")
         .ok()
         .unwrap_or("configuration.yaml".to_string());
-    println!("using config at: {}", config_path);
 
     let settings = config::Config::builder()
         .add_source(config::File::new(&config_path, config::FileFormat::Yaml).required(false))
