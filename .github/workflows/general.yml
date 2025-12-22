@@ -18,8 +18,8 @@ env:
   APP_DB_NAME: newsletter
 
 jobs:
-  awesome_test:
-    name: Awesome Test
+  test:
+    name: Test
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository code

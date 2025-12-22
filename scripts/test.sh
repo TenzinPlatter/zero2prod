@@ -29,6 +29,6 @@ if [[ -z "${CI}" ]]; then
     TEST_LOG=1 cargo nextest run
 else
     # don't use nextest in CI to avoid installing it every time
-    TEST_LOG=1 cargo test run
+    TEST_LOG=1 cargo test
 fi
 
