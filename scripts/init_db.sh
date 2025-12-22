@@ -55,8 +55,6 @@ if !command -v sqlx &> /dev/null; then
     exit 1
 fi
 
-# if the postgres container doesn't already exist and we are in CI as if we are not in CI we will
-# be connecting to supabase db and don't need to spin up a local container
 if [[ "$in_ci" == "true" ]] || [[ "$testing" == "true" ]]; then
     setup_db_container
 fi
