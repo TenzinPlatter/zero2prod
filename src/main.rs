@@ -1,6 +1,6 @@
 use anyhow::Result;
 
-use zero2prod::spawn_app;
+use zero2prod::spawn_prod_app;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -11,7 +11,7 @@ async fn main() -> Result<()> {
         )
         .init();
 
-    let app = spawn_app().await?;
+    let app = spawn_prod_app().await?;
     println!("Server running on {}", app.address);
     app.handle.await??;
     Ok(())
