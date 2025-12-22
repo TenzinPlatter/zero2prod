@@ -1,15 +1,18 @@
-use std::net::TcpListener;
+use anyhow::Result;
 
-use anyhow::{Context, Result};
-
-use zero2prod::{configuration::get_configuration, startup::run};
+use zero2prod::spawn_app;
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let config = get_configuration().context("Failed to read configuration")?;
+    tracing_subscriber::fmt()
+        .with_env_filter(
+            tracing_subscriber::EnvFilter::from_default_env()
+                .add_directive(tracing::Level::INFO.into()),
+        )
+        .init();
 
-    let address = format!("127.0.0.1:{}", config.application_port);
-    let listener = TcpListener::bind(address).context("Failed to bind to address")?;
-    println!("Server running on http://127.0.0.1:{}", config.application_port);
-    Ok(run(listener)?.await?)
+    let app = spawn_app().await?;
+    println!("Server running on {}", app.address);
+    app.handle.await??;
+    Ok(())
 }

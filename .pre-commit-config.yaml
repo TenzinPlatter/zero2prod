@@ -1,0 +1,22 @@
+repos:
+  - repo: https://github.com/doublify/pre-commit-rust
+    rev: v1.0
+    hooks:
+      # Auto-format code with rustfmt
+      - id: fmt
+        name: cargo fmt
+        args: ['--']
+
+      # Lint with clippy (warnings as errors, offline mode for sqlx)
+      - id: clippy
+        name: cargo clippy
+        args: ['--workspace', '--all-targets', '--', '-D', 'warnings']
+        entry: bash -c 'SQLX_OFFLINE=true cargo clippy "$@"' --
+
+      # Verify sqlx query metadata is up-to-date
+      - id: cargo-check
+        name: sqlx prepare --check
+        entry: cargo sqlx prepare --workspace --check -- --all-targets
+        language: system
+        pass_filenames: false
+        files: \.(rs|toml|sql)$
