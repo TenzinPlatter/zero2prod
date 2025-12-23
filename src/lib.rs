@@ -42,7 +42,7 @@ pub(crate) async fn spawn_app(prod: bool) -> Result<AppHandle> {
     }
 
     let conn = PgPoolOptions::new()
-        .max_connections(5)
+        .max_connections(config.database.max_connections.into())
         .connect(config.database.connection_string().expose_secret())
         .await
         .context("Failed to create DB connection pool")?;

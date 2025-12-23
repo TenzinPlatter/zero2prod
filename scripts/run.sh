@@ -21,4 +21,3 @@ if [[ "$formatter" == "-" ]]; then
 else
     RUST_LOG=info cargo run "$release_flag" | $formatter
 fi
-

@@ -1,0 +1,22 @@
+# Production configuration template
+# Secrets should be set via environment variables in DigitalOcean:
+#
+# Required environment variables:
+#   APP__database__host
+#   APP__database__username
+#   APP__database__password
+#   APP__database__database_name
+#
+# Optional (will use base.yaml defaults if not set):
+#   APP__database__port (default: 5432)
+#   APP__database__max_connections (default: 5)
+#   APP__app__port (default: 8000)
+
+app:
+  # Bind to all interfaces in production
+  host: 0.0.0.0
+  # Port can be overridden via APP__app__port environment variable
+
+database:
+  # All database values should be set via environment variables
+  # This ensures secrets are never committed to the repository
