@@ -1,8 +1,8 @@
 use actix_web::{App, HttpServer, dev::Server, web};
 use anyhow::{Context, Result};
-use secrecy::ExposeSecret;
 use sqlx::PgPool;
 use sqlx::postgres::PgPoolOptions;
+use tracing::info;
 use tracing_actix_web::TracingLogger;
 use uuid::Uuid;
 
@@ -41,10 +41,11 @@ pub(crate) async fn spawn_app(prod: bool) -> Result<AppHandle> {
         setup_testing_db(&config).await?;
     }
 
+    info!("Using config: {:?}", config);
+
     let conn = PgPoolOptions::new()
         .max_connections(config.database.max_connections.into())
-        .connect_lazy(config.database.connection_string().expose_secret())
-        .context("Failed to create DB connection pool")?;
+        .connect_lazy_with(config.database.connection_options());
 
     let server = run(listener, conn.clone()).context("Failed to start server")?;
     let handle = tokio::spawn(server);
@@ -82,8 +83,8 @@ fn apply_testing_overrides(config: &mut Settings) {
 
 async fn setup_testing_db(config: &Settings) -> Result<()> {
     // For tests: create a unique database per test
-    let postgres_connection = config.database.postgres_connection_string();
-    let db_pool = PgPool::connect_lazy(postgres_connection.expose_secret())?;
+    let postgres_connection = config.database.postgres_connection_options();
+    let db_pool = PgPool::connect_lazy_with(postgres_connection);
 
     // Create the database
     // SAFETY: no injections as we just generated the DB name using Uuid, also we are required to

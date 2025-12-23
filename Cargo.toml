@@ -25,6 +25,7 @@ tracing-log = "0.2"
 tracing-actix-web = "0.7.0"
 uuid = { version = "1.19.0", features = ["v4"] }
 secrecy = { version = "0.8.0", features = ["serde"] }
+serde-aux = "4.7.0"
 
 [dependencies.sqlx]
 version = "0.8.6"
