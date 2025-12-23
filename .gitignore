@@ -2,3 +2,5 @@
 target
 configuration.prod.yaml
 configuration.local.yaml
+configuration/prod.yaml
+configuration/local.yaml
