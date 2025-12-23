@@ -43,8 +43,7 @@ pub(crate) async fn spawn_app(prod: bool) -> Result<AppHandle> {
 
     let conn = PgPoolOptions::new()
         .max_connections(config.database.max_connections.into())
-        .connect(config.database.connection_string().expose_secret())
-        .await
+        .connect_lazy(config.database.connection_string().expose_secret())
         .context("Failed to create DB connection pool")?;
 
     let server = run(listener, conn.clone()).context("Failed to start server")?;
@@ -84,10 +83,11 @@ fn apply_testing_overrides(config: &mut Settings) {
 async fn setup_testing_db(config: &Settings) -> Result<()> {
     // For tests: create a unique database per test
     let postgres_connection = config.database.postgres_connection_string();
-    let db_pool = PgPool::connect(postgres_connection.expose_secret()).await?;
+    let db_pool = PgPool::connect_lazy(postgres_connection.expose_secret())?;
 
     // Create the database
-    // SAFETY: no injections as we just generated the DB name using Uuid
+    // SAFETY: no injections as we just generated the DB name using Uuid, also we are required to
+    // use format! for DDL, parameterized query doesn't work
     sqlx::query(&format!(
         r#"CREATE DATABASE "{}";"#,
         config.database.database_name

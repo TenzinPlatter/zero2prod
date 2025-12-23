@@ -27,23 +27,33 @@ pub struct DatabaseSettings {
 impl DatabaseSettings {
     pub fn connection_string(&self) -> Secret<String> {
         format!(
-            "postgres://{}:{}@{}:{}/{}",
+            "postgres://{}:{}@{}:{}/{}{}",
             self.username,
             self.password.expose_secret(),
             self.host,
             self.port,
-            self.database_name
+            self.database_name,
+            if std::env::var("APP_ENVIRONMENT").unwrap_or_default() == "PRODUCTION" {
+                "?sslmode=require"
+            } else {
+                ""
+            }
         )
         .into()
     }
 
     pub fn postgres_connection_string(&self) -> Secret<String> {
         format!(
-            "postgres://{}:{}@{}:{}/postgres",
+            "postgres://{}:{}@{}:{}/postgres{}",
             self.username,
             self.password.expose_secret(),
             self.host,
-            self.port
+            self.port,
+            if std::env::var("APP_ENVIRONMENT").unwrap_or_default() == "PRODUCTION" {
+                "?sslmode=require"
+            } else {
+                ""
+            }
         )
         .into()
     }
@@ -74,5 +84,5 @@ pub fn get_configuration() -> Result<Settings> {
         )
         .build()?;
 
-    Ok(settings.try_deserialize::<Settings>()?)
+    Ok(settings.try_deserialize()?)
 }
