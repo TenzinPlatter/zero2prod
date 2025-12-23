@@ -10,13 +10,14 @@ fi
 set -eo pipefail
 set -x
 
-if [[ -z "${CI}" ]]; then
-    export CONFIG_FILE="configuration.local.yaml"
-else
+if [[ -n "${CI}" ]]; then
     # overload port and url in CI as we don't need to worry about port being in use
     export POSTGRES_PORT="5432"
     export DATABASE_URL="postgresql://app:secret@localhost:5432/newsletter"
     export CONFIG_FILE="configuration.ci.yaml"
+    export APP_ENVIRONMENT="CI"
+else
+    export APP_ENVIRONMENT="LOCAL"
 fi
 
 if [[ $(docker ps -aq -f name=${CONTAINER_NAME}) ]]; then
@@ -26,9 +27,9 @@ fi
 
 TESTING=true ./scripts/init_db.sh
 if [[ -z "${CI}" ]]; then
-    TEST_LOG=1 cargo nextest run
+    TEST_LOG=debug cargo nextest run --no-capture "$@"
 else
     # don't use nextest in CI to avoid installing it every time
-    TEST_LOG=1 cargo test
+    TEST_LOG=debug cargo test "$@" -- --nocapture
 fi
 
