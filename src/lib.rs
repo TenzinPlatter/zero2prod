@@ -9,9 +9,13 @@ use uuid::Uuid;
 use std::net::TcpListener;
 
 use crate::configuration::{Settings, get_configuration};
+use crate::domain::SubscriberEmail;
+use crate::email_client::EmailClient;
 use crate::routes::{health_check, subscribe};
 
 pub mod configuration;
+pub mod domain;
+pub mod email_client;
 pub mod routes;
 
 pub struct AppHandle {
@@ -47,7 +51,14 @@ pub(crate) async fn spawn_app(prod: bool) -> Result<AppHandle> {
         .max_connections(config.database.max_connections.into())
         .connect_lazy_with(config.database.connection_options());
 
-    let server = run(listener, conn.clone()).context("Failed to start server")?;
+    let mail_client = EmailClient::new(
+        SubscriberEmail::parse(config.email_client.sender_email.clone())
+            .context("Invalid sender email address")?,
+        config.email_client.base_url.clone(),
+        config.email_client.auth_token.clone(),
+    );
+
+    let server = run(listener, conn.clone(), mail_client).context("Failed to start server")?;
     let handle = tokio::spawn(server);
 
     // Migrate the database
@@ -63,14 +74,16 @@ pub(crate) async fn spawn_app(prod: bool) -> Result<AppHandle> {
     })
 }
 
-fn run(listener: TcpListener, connection: PgPool) -> Result<Server> {
+fn run(listener: TcpListener, connection: PgPool, email_client: EmailClient) -> Result<Server> {
     let connection = web::Data::new(connection);
+    let email_client = web::Data::new(email_client);
     Ok(HttpServer::new(move || {
         App::new()
             .wrap(TracingLogger::default())
             .route("/health_check", web::get().to(health_check))
             .route("/subscriptions", web::post().to(subscribe))
             .app_data(connection.clone())
+            .app_data(email_client.clone())
     })
     .listen(listener)?
     .run())

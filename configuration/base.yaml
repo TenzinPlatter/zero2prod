@@ -8,3 +8,8 @@ database:
   password: secret
   database_name: newsletter
   max_connections: 5
+email_client:
+  base_url: "https://api.resend.com"
+  # NOTE: these two should be overridden with env vars
+  sender_email: email@email.com
+  auth_token: default_token

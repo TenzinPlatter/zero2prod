@@ -5,10 +5,12 @@ use sqlx::PgPool;
 use tracing::{error, info, instrument};
 use uuid::Uuid;
 
+use crate::domain::NewSubscriber;
+
 #[derive(Deserialize, Debug)]
 pub struct FormData {
-    name: String,
-    email: String,
+    pub name: String,
+    pub email: String,
 }
 
 #[instrument(
@@ -20,24 +22,32 @@ pub struct FormData {
     )
 )]
 pub async fn subscribe(form: web::Form<FormData>, pool: web::Data<PgPool>) -> HttpResponse {
+    let subscriber = match form.0.try_into() {
+        Ok(info) => info,
+        Err(e) => {
+            error!("Failed to parse subscriber info: {}", e);
+            return HttpResponse::BadRequest().finish();
+        }
+    };
+
     info!("Saving new subscriber details in DB");
-    match insert_subscriber(&pool, &form.email, &form.name).await {
+    match insert_subscriber(&pool, &subscriber).await {
         Ok(_) => HttpResponse::Ok().finish(),
         // ignoring the error as it is already logged in insert_subscriber
         Err(_e) => HttpResponse::InternalServerError().finish(),
     }
 }
 
-#[instrument(name = "Inserting a new subscriber", skip(pool, email, name))]
-async fn insert_subscriber(pool: &PgPool, email: &str, name: &str) -> Result<(), sqlx::Error> {
+#[instrument(name = "Inserting a new subscriber", skip(pool, subscriber))]
+async fn insert_subscriber(pool: &PgPool, subscriber: &NewSubscriber) -> Result<(), sqlx::Error> {
     match sqlx::query!(
         r#"
         INSERT INTO subscriptions (id, email, name, subscribed_at)
         VALUES ($1, $2, $3, $4)
         "#,
         Uuid::new_v4(),
-        email,
-        name,
+        subscriber.email.as_ref(),
+        subscriber.name.as_ref(),
         Utc::now(),
     )
     .execute(pool)

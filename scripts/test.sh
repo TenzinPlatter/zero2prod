@@ -20,14 +20,9 @@ else
     export APP_ENVIRONMENT="LOCAL"
 fi
 
-if [[ $(docker ps -aq -f name=${CONTAINER_NAME}) ]]; then
-    docker kill ${CONTAINER_NAME} || true
-    docker rm ${CONTAINER_NAME}
-fi
-
 TESTING=true ./scripts/init_db.sh
 if [[ -z "${CI}" ]]; then
-    TEST_LOG=debug cargo nextest run --no-capture "$@"
+    TEST_LOG=debug cargo nextest run --no-capture --no-fail-fast "$@"
 else
     # don't use nextest in CI to avoid installing it every time
     TEST_LOG=debug cargo test "$@" -- --nocapture
