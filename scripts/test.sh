@@ -1,6 +1,7 @@
 export CONTAINER_NAME="postgres_test"
 export POSTGRES_PORT="12345"
 export DATABASE_URL="postgresql://app:secret@localhost:12345/newsletter"
+export APP_DATABASE__PORT="${POSTGRES_PORT}"
 
 if [[ ! -f ./scripts/init_db.sh ]]; then
     echo "Please run the testing script from the project root"
