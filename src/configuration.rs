@@ -23,6 +23,7 @@ pub struct EmailClientSettings {
     pub base_url: String,
     pub sender_email: String,
     pub auth_token: Secret<String>,
+    pub timeout_milliseconds: u64,
 }
 
 #[derive(Deserialize, Debug)]
@@ -68,6 +69,12 @@ impl DatabaseSettings {
                     sqlx::postgres::PgSslMode::Prefer
                 },
             )
+    }
+}
+
+impl Settings {
+    pub fn app_address(&self) -> String {
+        format!("http://{}:{}", self.app.host, self.app.port)
     }
 }
 

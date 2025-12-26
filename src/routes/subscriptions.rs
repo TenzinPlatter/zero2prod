@@ -42,13 +42,14 @@ pub async fn subscribe(form: web::Form<FormData>, pool: web::Data<PgPool>) -> Ht
 async fn insert_subscriber(pool: &PgPool, subscriber: &NewSubscriber) -> Result<(), sqlx::Error> {
     match sqlx::query!(
         r#"
-        INSERT INTO subscriptions (id, email, name, subscribed_at)
-        VALUES ($1, $2, $3, $4)
+        INSERT INTO subscriptions (id, email, name, subscribed_at, status)
+        VALUES ($1, $2, $3, $4, $5)
         "#,
         Uuid::new_v4(),
         subscriber.email.as_ref(),
         subscriber.name.as_ref(),
         Utc::now(),
+        "confirmed",
     )
     .execute(pool)
     .await
