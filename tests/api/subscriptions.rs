@@ -50,7 +50,7 @@ async fn subscribe_returns_a_400_when_data_is_missing() -> Result<()> {
 }
 
 #[tokio::test]
-async fn subscribe_returns_a_200_when_fields_are_present_but_empty() -> Result<()> {
+async fn subscribe_returns_a_400_when_fields_are_present_but_empty() -> Result<()> {
     // Arrange
     let app = spawn_test_app().await?;
     let test_cases = vec![

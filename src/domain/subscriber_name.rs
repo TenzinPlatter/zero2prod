@@ -1,6 +1,8 @@
 use anyhow::{Result, bail};
 use unicode_segmentation::UnicodeSegmentation;
 
+pub const MAX_NAME_LENGTH: usize = 256;
+
 #[derive(Debug)]
 pub struct SubscriberName(String);
 
@@ -9,12 +11,12 @@ impl SubscriberName {
         // true -> invalid name
         // false -> valid name
         match s.trim().is_empty()
-            || s.graphemes(true).count() > 256
+            || s.graphemes(true).count() > MAX_NAME_LENGTH
             || s.chars()
                 .any(|c| ['/', '(', ')', '"', '<', '>', '\\', '{', '}'].contains(&c))
         {
             true => bail!("{} is not a valid subscriber name.", s),
-            false => Ok(SubscriberName(s)),
+            false => Ok(SubscriberName(s.trim().to_string())),
         }
     }
 }
@@ -27,17 +29,17 @@ impl AsRef<str> for SubscriberName {
 
 #[cfg(test)]
 mod tests {
-    use crate::domain::subscriber_name::SubscriberName;
+    use crate::domain::subscriber_name::{MAX_NAME_LENGTH, SubscriberName};
     use claims::{assert_err, assert_ok};
     #[test]
     fn a_256_grapheme_long_name_is_valid() {
-        let name = "ё".repeat(256);
+        let name = "ё".repeat(MAX_NAME_LENGTH);
         assert_ok!(SubscriberName::parse(name));
     }
 
     #[test]
     fn a_name_longer_than_256_graphemes_is_rejected() {
-        let name = "a".repeat(257);
+        let name = "a".repeat(MAX_NAME_LENGTH + 1);
         assert_err!(SubscriberName::parse(name));
     }
 
