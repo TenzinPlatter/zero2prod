@@ -2,8 +2,8 @@ use actix_web::{App, HttpServer, dev::Server, web};
 use anyhow::{Context, Result};
 use sqlx::PgPool;
 use sqlx::postgres::PgPoolOptions;
-use tracing::info;
 use tracing::subscriber::set_global_default;
+use tracing::{debug, info};
 use tracing_actix_web::TracingLogger;
 use tracing_bunyan_formatter::{BunyanFormattingLayer, JsonStorageLayer};
 use tracing_log::LogTracer;
@@ -72,8 +72,11 @@ pub async fn spawn_test_app() -> Result<AppHandle> {
     // setup test logging
     LazyLock::force(&TEST_TRACING);
     let mut config = get_configuration().context("Failed to read configuration")?;
+    debug!("Original config: {:?}", config);
     apply_testing_overrides(&mut config);
+    debug!("Testing config: {:?}", config);
     create_test_db(&config).await?;
+    debug!("Created test db");
     build_app(config).await
 }
 

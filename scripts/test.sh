@@ -1,7 +1,12 @@
+#!/usr/bin/env bash
+
 export CONTAINER_NAME="postgres_test"
-export POSTGRES_PORT="12345"
-export DATABASE_URL="postgresql://app:secret@localhost:12345/newsletter"
-export APP_DATABASE__PORT="${POSTGRES_PORT}"
+
+if [[ -z "${CI}" ]]; then
+    export APP_DATABASE__PORT="${POSTGRES_PORT}"
+    export POSTGRES_PORT="12345"
+    export DATABASE_URL="postgresql://app:secret@localhost:12345/newsletter"
+fi
 
 if [[ ! -f ./scripts/init_db.sh ]]; then
     echo "Please run the testing script from the project root"
