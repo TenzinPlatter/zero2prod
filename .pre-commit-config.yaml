@@ -16,7 +16,7 @@ repos:
       # Verify sqlx query metadata is up-to-date
       - id: cargo-check
         name: sqlx prepare --check
-        entry: cargo sqlx prepare --workspace --check -- --all-targets
+        entry: cargo sqlx prepare --workspace --check -- --tests --all-targets
         language: system
         pass_filenames: false
         files: \.(rs|toml|sql)$

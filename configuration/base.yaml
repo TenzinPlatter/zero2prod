@@ -2,9 +2,15 @@ app:
   host: 127.0.0.1
   port: 8000
 database:
-  host: localhost
+  host: 0.0.0.0
   port: 5432
   username: app
   password: secret
   database_name: newsletter
   max_connections: 5
+email_client:
+  base_url: "https://api.resend.com"
+  timeout_milliseconds: 5000
+  # NOTE: these two should be overridden with env vars
+  sender_email: email@email.com
+  auth_token: default_token

@@ -1,6 +1,12 @@
+#!/usr/bin/env bash
+
 export CONTAINER_NAME="postgres_test"
-export POSTGRES_PORT="12345"
-export DATABASE_URL="postgresql://app:secret@localhost:12345/newsletter"
+
+if [[ -z "${CI}" ]]; then
+    export APP_DATABASE__PORT="${POSTGRES_PORT}"
+    export POSTGRES_PORT="12345"
+    export DATABASE_URL="postgresql://app:secret@localhost:12345/newsletter"
+fi
 
 if [[ ! -f ./scripts/init_db.sh ]]; then
     echo "Please run the testing script from the project root"
@@ -20,14 +26,9 @@ else
     export APP_ENVIRONMENT="LOCAL"
 fi
 
-if [[ $(docker ps -aq -f name=${CONTAINER_NAME}) ]]; then
-    docker kill ${CONTAINER_NAME} || true
-    docker rm ${CONTAINER_NAME}
-fi
-
 TESTING=true ./scripts/init_db.sh
 if [[ -z "${CI}" ]]; then
-    TEST_LOG=debug cargo nextest run --no-capture "$@"
+    TEST_LOG=debug cargo nextest run --no-capture --no-fail-fast "$@"
 else
     # don't use nextest in CI to avoid installing it every time
     TEST_LOG=debug cargo test "$@" -- --nocapture
