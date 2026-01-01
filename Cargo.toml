@@ -28,9 +28,8 @@ secrecy = { version = "0.8.0", features = ["serde"] }
 serde-aux = "4.7.0"
 unicode-segmentation = "1.12.0"
 claims = "0.8.0"
+rand = { version = "0.9.2", features = ["std_rng"] }
 validator = "0.20.0"
-fake = "4.4.0"
-rand = "0.9.2"
 
 [dependencies.sqlx]
 version = "0.8.6"
@@ -46,7 +45,9 @@ features = [
 
 
 [dev-dependencies]
+linkify = "0.10.0"
 quickcheck = "1.0.3"
 quickcheck_macros = "1.1.0"
 serde_json = "1.0.147"
 wiremock = "0.6.5"
+fake = "4.4.0"

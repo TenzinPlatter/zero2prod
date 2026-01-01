@@ -1,6 +1,6 @@
 use anyhow::Result;
 use tracing::info;
-use zero2prod::spawn_prod_app;
+use zero2prod::startup::spawn_prod_app;
 
 #[tokio::main]
 async fn main() -> Result<()> {

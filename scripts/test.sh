@@ -3,8 +3,8 @@
 export CONTAINER_NAME="postgres_test"
 
 if [[ -z "${CI}" ]]; then
-    export APP_DATABASE__PORT="${POSTGRES_PORT}"
     export POSTGRES_PORT="12345"
+    export APP_DATABASE__PORT="${POSTGRES_PORT}"
     export DATABASE_URL="postgresql://app:secret@localhost:12345/newsletter"
 fi
 
