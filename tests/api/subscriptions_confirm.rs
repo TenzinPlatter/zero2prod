@@ -30,7 +30,7 @@ async fn the_link_returned_by_subscribe_returns_a_200_if_called() -> Result<()> 
     let app = spawn_test_app().await?;
     let body = "name=le%20guin&email=ursula_le_guin%40gmail.com";
 
-    Mock::given(path("/email"))
+    Mock::given(path("/emails"))
         .and(method("POST"))
         .respond_with(ResponseTemplate::new(200))
         .mount(&app.email_server)
@@ -55,7 +55,7 @@ async fn clicking_on_the_confirmation_link_confirms_a_subscriber() -> Result<()>
     let app = spawn_test_app().await?;
     let body = "name=le%20guin&email=ursula_le_guin%40gmail.com";
 
-    Mock::given(path("/email"))
+    Mock::given(path("/emails"))
         .and(method("POST"))
         .respond_with(ResponseTemplate::new(200))
         .mount(&app.email_server)

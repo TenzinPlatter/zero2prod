@@ -169,8 +169,8 @@ pub fn get_email_links(request: &wiremock::Request) -> Result<ConfirmationLinks>
 
     let body: serde_json::Value = serde_json::from_slice(&request.body)?;
 
-    let text_link = get_link(body.get("TextBody").unwrap().as_str().unwrap());
-    let html_link = get_link(body.get("HtmlBody").unwrap().as_str().unwrap());
+    let text_link = get_link(body.get("text").unwrap().as_str().unwrap());
+    let html_link = get_link(body.get("html").unwrap().as_str().unwrap());
 
     Ok(ConfirmationLinks {
         html: html_link,
@@ -222,7 +222,7 @@ pub async fn create_unconfirmed_subscriber(
     app: &crate::helpers::TestApp,
 ) -> Result<ConfirmationLinks> {
     let body = get_fake_subscription_body();
-    let _mock_guard = Mock::given(path("/email"))
+    let _mock_guard = Mock::given(path("/emails"))
         .and(method("POST"))
         .respond_with(ResponseTemplate::new(200))
         .named("Create unconfirmed subscriber email")

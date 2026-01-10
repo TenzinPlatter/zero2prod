@@ -16,13 +16,13 @@ pub struct EmailClient {
 }
 
 #[derive(serde::Serialize)]
-#[serde(rename_all = "PascalCase")]
+#[serde(rename_all = "snake_case")]
 struct SendEmailRequest<'a> {
     from: &'a str,
     to: &'a str,
     subject: &'a str,
-    html_body: &'a str,
-    text_body: &'a str,
+    html: &'a str,
+    text: &'a str,
 }
 
 impl EmailClient {
@@ -49,18 +49,21 @@ impl EmailClient {
         html_content: &str,
         text_content: &str,
     ) -> Result<()> {
-        let url = Url::parse(self.base_url.as_str())?.join("/email")?;
+        let url = Url::parse(self.base_url.as_str())?.join("/emails")?;
         let body = SendEmailRequest {
             from: self.sender.as_ref(),
             to: recipient.as_ref(),
             subject,
-            html_body: html_content,
-            text_body: text_content,
+            html: html_content,
+            text: text_content,
         };
 
         self.http_client
             .post(url)
-            .header("X-Postmark-Server-Token", self.auth_token.expose_secret())
+            .header(
+                "Authorization",
+                format!("Bearer {}", self.auth_token.expose_secret()),
+            )
             .json(&body)
             .timeout(self.timeout)
             .send()
@@ -97,11 +100,11 @@ mod tests {
         fn matches(&self, request: &wiremock::Request) -> bool {
             let result: Result<serde_json::Value, _> = serde_json::from_slice(&request.body);
             if let Ok(body) = result {
-                body.get("From").is_some()
-                    && body.get("To").is_some()
-                    && body.get("Subject").is_some()
-                    && body.get("HtmlBody").is_some()
-                    && body.get("TextBody").is_some()
+                body.get("from").is_some()
+                    && body.get("to").is_some()
+                    && body.get("subject").is_some()
+                    && body.get("html").is_some()
+                    && body.get("text").is_some()
             } else {
                 false
             }
@@ -135,10 +138,10 @@ mod tests {
         let mock_server = MockServer::start().await;
         let email_client = email_client(mock_server.uri());
 
-        Mock::given(header_exists("X-Postmark-Server-Token"))
+        Mock::given(header_exists("Authorization"))
             .and(SendEmailBodyMatcher)
             .and(header("Content-type", "application/json"))
-            .and(path("/email"))
+            .and(path("/emails"))
             .and(method("POST"))
             .respond_with(ResponseTemplate::new(200))
             .expect(1)

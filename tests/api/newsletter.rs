@@ -13,7 +13,7 @@ async fn newsletters_are_not_delivered_to_unconfirmed_subscribers() -> Result<()
     let app = spawn_test_app().await?;
     create_unconfirmed_subscriber(&app).await?;
 
-    Mock::given(path("/email"))
+    Mock::given(path("/emails"))
         .and(method("POST"))
         .respond_with(ResponseTemplate::new(200))
         .expect(0)
@@ -45,7 +45,7 @@ async fn newsletters_are_delivered_to_confirmed_subscribers() -> Result<()> {
     let app = spawn_test_app().await?;
     app.create_confirmed_subscriber().await?;
 
-    Mock::given(path("/email"))
+    Mock::given(path("/emails"))
         .and(method("POST"))
         .respond_with(ResponseTemplate::new(200))
         .expect(1)

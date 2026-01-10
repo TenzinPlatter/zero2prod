@@ -12,7 +12,7 @@ async fn subscribe_returns_a_200_for_valid_form_data() -> Result<()> {
     let app = spawn_test_app().await?;
     let body = "name=le%20guin&email=ursula_le_guin%40gmail.com";
 
-    Mock::given(path("/email"))
+    Mock::given(path("/emails"))
         .and(method("POST"))
         .respond_with(ResponseTemplate::new(200))
         .mount(&app.email_server)
@@ -29,7 +29,7 @@ async fn subscribe_returns_a_200_for_valid_form_data() -> Result<()> {
 async fn subscribe_persists_the_new_subscriber() -> Result<()> {
     let app = spawn_test_app().await?;
     let body = "name=le%20guin&email=ursula_le_guin%40gmail.com";
-    Mock::given(path("/email"))
+    Mock::given(path("/emails"))
         .and(method("POST"))
         .respond_with(ResponseTemplate::new(200))
         .mount(&app.email_server)
@@ -105,8 +105,8 @@ async fn subscribe_sends_a_confirmation_email_for_valid_data() -> Result<()> {
     let app = spawn_test_app().await?;
     let body = "name=le%20guin&email=ursula_le_guin%40gmail.com";
 
-    Mock::given(header_exists("X-Postmark-Server-Token"))
-        .and(path("/email"))
+    Mock::given(header_exists("Authorization"))
+        .and(path("/emails"))
         .and(method("POST"))
         .respond_with(ResponseTemplate::new(200))
         .expect(1)
@@ -125,8 +125,8 @@ async fn subscribe_sends_a_confirmation_email_with_a_link() -> Result<()> {
     let app = spawn_test_app().await?;
     let body = "name=le%20guin&email=ursula_le_guin%40gmail.com";
 
-    Mock::given(header_exists("X-Postmark-Server-Token"))
-        .and(path("/email"))
+    Mock::given(header_exists("Authorization"))
+        .and(path("/emails"))
         .and(method("POST"))
         .respond_with(ResponseTemplate::new(200))
         .mount(&app.email_server)

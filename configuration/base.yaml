@@ -11,7 +11,7 @@ database:
   database_name: newsletter
   max_connections: 5
 email_client:
-  base_url: "https://api.postmarkapp.com"
+  base_url: "https://api.resend.com"
   timeout_milliseconds: 5000
   # NOTE: these two should be overridden with env vars
   sender_email: email@email.com
