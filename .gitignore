@@ -1,3 +1,5 @@
-.env
 target
+logs
+.env
 configuration/local.yaml
+configuration/dev.yaml

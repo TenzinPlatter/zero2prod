@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 use anyhow::Result;
 use validator::ValidateEmail;
 
@@ -10,6 +12,14 @@ impl SubscriberEmail {
             true => Ok(SubscriberEmail(s)),
             false => anyhow::bail!("{} is not a valid subscriber email.", s),
         }
+    }
+}
+
+impl FromStr for SubscriberEmail {
+    type Err = anyhow::Error;
+
+    fn from_str(s: &str) -> Result<Self> {
+        SubscriberEmail::parse(s.to_owned())
     }
 }
 

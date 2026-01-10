@@ -2,6 +2,7 @@ app:
   host: 127.0.0.1
   port: 8000
   base_url: "http://127.0.0.1"
+  hmac_secret: longgggg-secret-key
 database:
   host: 0.0.0.0
   port: 5432

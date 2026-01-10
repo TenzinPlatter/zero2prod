@@ -11,16 +11,16 @@ pub struct NewSubscriber {
 }
 
 impl NewSubscriber {
-    pub fn new(name: String, email: String) -> Result<NewSubscriber> {
+    pub fn new(name: String, email: String) -> Result<NewSubscriber, String> {
         Ok(NewSubscriber {
-            name: SubscriberName::parse(name)?,
-            email: SubscriberEmail::parse(email)?,
+            name: SubscriberName::parse(name).map_err(|e| e.to_string())?,
+            email: SubscriberEmail::parse(email).map_err(|e| e.to_string())?,
         })
     }
 }
 
 impl TryFrom<FormData> for NewSubscriber {
-    type Error = anyhow::Error;
+    type Error = String;
 
     fn try_from(value: FormData) -> Result<Self, Self::Error> {
         NewSubscriber::new(value.name, value.email)

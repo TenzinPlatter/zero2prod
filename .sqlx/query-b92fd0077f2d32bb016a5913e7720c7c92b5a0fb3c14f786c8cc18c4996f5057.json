@@ -1,0 +1,12 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "ALTER TABLE subscription_tokens DROP COLUMN subscriber_id;",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": []
+  },
+  "hash": "b92fd0077f2d32bb016a5913e7720c7c92b5a0fb3c14f786c8cc18c4996f5057"
+}

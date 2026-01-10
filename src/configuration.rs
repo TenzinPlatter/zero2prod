@@ -4,6 +4,8 @@ use serde::Deserialize;
 use serde_aux::field_attributes::deserialize_number_from_string;
 use sqlx::postgres::PgConnectOptions;
 
+use crate::startup::HmacSecret;
+
 #[derive(Deserialize, Debug, Clone)]
 pub struct Settings {
     pub database: DatabaseSettings,
@@ -17,6 +19,7 @@ pub struct ApplicationSettings {
     pub port: u16,
     pub host: String,
     pub base_url: String,
+    pub hmac_secret: HmacSecret,
 }
 
 #[derive(Deserialize, Debug, Clone)]
@@ -84,12 +87,13 @@ pub fn get_configuration() -> Result<Settings> {
     let config_dir = base_path.join("configuration");
 
     let env = std::env::var("APP_ENVIRONMENT")?;
-    let config_path = match env.as_str() {
-        "PRODUCTION" => config_dir.join("prod.yaml"),
-        "LOCAL" => config_dir.join("local.yaml"),
-        "CI" => config_dir.join("ci.yaml"),
+    let config_path = match env.to_lowercase().as_str() {
+        "production" => config_dir.join("prod.yaml"),
+        "local" => config_dir.join("local.yaml"),
+        "ci" => config_dir.join("ci.yaml"),
+        "development" => config_dir.join("dev.yaml"),
         _ => bail!(
-            "Invalid APP_ENVIRONMENT: {}, use one of PRODUCTION, LOCAL, or CI",
+            "Invalid APP_ENVIRONMENT: {}, use one of PRODUCTION, LOCAL, DEVELOPMENT, or CI",
             env
         ),
     };

@@ -3,6 +3,7 @@ use std::time::Duration;
 use anyhow::Result;
 use reqwest::{Client, Url};
 use secrecy::{ExposeSecret, Secret};
+use tracing::instrument;
 
 use crate::domain::SubscriberEmail;
 
@@ -40,6 +41,7 @@ impl EmailClient {
         }
     }
 
+    #[instrument("Sending email", skip(self))]
     pub async fn send_email(
         &self,
         recipient: &SubscriberEmail,

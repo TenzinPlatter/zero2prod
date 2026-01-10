@@ -1,5 +1,10 @@
+use actix_web::cookie::Key;
 use actix_web::{App, HttpServer, dev::Server, web};
+use actix_web_flash_messages::FlashMessagesFramework;
+use actix_web_flash_messages::storage::CookieMessageStore;
 use anyhow::{Context, Result};
+use secrecy::{ExposeSecret, Secret};
+use serde::Deserialize;
 use sqlx::PgPool;
 use sqlx::postgres::PgPoolOptions;
 use tracing::info;
@@ -16,7 +21,13 @@ use std::time::Duration;
 use crate::configuration::{Settings, get_configuration};
 use crate::domain::SubscriberEmail;
 use crate::email_client::EmailClient;
-use crate::routes::{confirm_subscription, health_check, subscribe};
+use crate::routes::{
+    confirm_subscription, health_check, home::home, publish_newsletter, subscribe,
+};
+use crate::routes::{login_form, login_post};
+
+#[derive(Clone, Debug, Deserialize)]
+pub struct HmacSecret(pub Secret<String>);
 
 pub struct AppHandle {
     pub handle: tokio::task::JoinHandle<Result<(), std::io::Error>>,
@@ -70,6 +81,7 @@ pub async fn build_app(mut config: Settings) -> Result<AppHandle> {
 
     let server = run(listener, conn.clone(), mail_client, config.clone())
         .context("Failed to start server")?;
+
     let handle = tokio::spawn(server);
 
     // Migrate the database
@@ -91,18 +103,29 @@ fn run(
     email_client: EmailClient,
     config: Settings,
 ) -> Result<Server> {
+    let hmac_secret = config.app.hmac_secret.clone();
+    let message_store =
+        CookieMessageStore::builder(Key::from(hmac_secret.0.expose_secret().as_bytes())).build();
+    let message_framework = FlashMessagesFramework::builder(message_store).build();
+
     let connection = web::Data::new(connection);
     let email_client = web::Data::new(email_client);
     let app_data = web::Data::new(config);
+
     Ok(HttpServer::new(move || {
         App::new()
             .wrap(TracingLogger::default())
+            .wrap(message_framework.clone())
             .route("/health_check", web::get().to(health_check))
             .route("/subscriptions", web::post().to(subscribe))
             .route(
                 "/subscriptions/confirm",
                 web::get().to(confirm_subscription),
             )
+            .route("/newsletters", web::post().to(publish_newsletter))
+            .route("/", web::get().to(home))
+            .route("/login", web::get().to(login_form))
+            .route("/login", web::post().to(login_post))
             .app_data(connection.clone())
             .app_data(email_client.clone())
             .app_data(app_data.clone())

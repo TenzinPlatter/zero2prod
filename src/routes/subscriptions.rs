@@ -1,5 +1,7 @@
-use actix_web::{HttpResponse, web};
-use anyhow::Result;
+use std::fmt::Debug;
+
+use actix_web::{HttpResponse, ResponseError, web};
+use anyhow::{Context, Result};
 use chrono::Utc;
 use rand::{Rng, distr::Alphanumeric, rng};
 use serde::Deserialize;
@@ -7,7 +9,41 @@ use sqlx::{PgPool, Postgres, Transaction};
 use tracing::{error, info, instrument};
 use uuid::Uuid;
 
-use crate::{configuration::Settings, domain::NewSubscriber, email_client::EmailClient};
+use crate::{
+    configuration::Settings, domain::NewSubscriber, email_client::EmailClient,
+    telemetry::error_chain_fmt,
+};
+
+#[derive(thiserror::Error)]
+pub enum SubscribeError {
+    #[error("{0}")]
+    ValidationError(String),
+    #[error(transparent)]
+    UnexpectedError(#[from] anyhow::Error),
+}
+
+impl From<String> for SubscribeError {
+    fn from(value: String) -> Self {
+        SubscribeError::ValidationError(value)
+    }
+}
+
+impl Debug for SubscribeError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        error_chain_fmt(self, f)
+    }
+}
+
+impl ResponseError for SubscribeError {
+    fn status_code(&self) -> actix_web::http::StatusCode {
+        match self {
+            SubscribeError::ValidationError(_) => actix_web::http::StatusCode::BAD_REQUEST,
+            SubscribeError::UnexpectedError(_) => {
+                actix_web::http::StatusCode::INTERNAL_SERVER_ERROR
+            }
+        }
+    }
+}
 
 #[derive(Deserialize, Debug)]
 pub struct FormData {
@@ -28,60 +64,42 @@ pub async fn subscribe(
     pool: web::Data<PgPool>,
     email_client: web::Data<EmailClient>,
     config: web::Data<Settings>,
-) -> HttpResponse {
-    let mut transaction = match pool.begin().await {
-        Ok(tx) => tx,
-        Err(e) => {
-            error!("Failed to start DB transaction: {}", e);
-            return HttpResponse::InternalServerError().finish();
-        }
-    };
+) -> Result<HttpResponse, SubscribeError> {
+    let mut transaction = pool
+        .begin()
+        .await
+        .context("Failed to begin SQL transaction")?;
 
-    let subscriber: NewSubscriber = match form.0.try_into() {
-        Ok(info) => info,
-        Err(e) => {
-            error!("Failed to parse subscriber info: {}", e);
-            return HttpResponse::BadRequest().finish();
-        }
-    };
+    let subscriber: NewSubscriber = form.0.try_into()?;
 
     info!("Saving new subscriber details in DB");
-    let token = match insert_subscriber(&mut transaction, &subscriber).await {
-        Ok(token) => token,
-        Err(_) => {
-            return HttpResponse::InternalServerError().finish();
-        }
-    };
+    let token = generate_subscription_token();
+    let id = insert_subscriber(&mut transaction, &subscriber)
+        .await
+        .context("Failed to insert new subscriber")?;
+    store_token(&mut transaction, &id, &token)
+        .await
+        .context("Failed to store subscription token")?;
 
     info!("Sending confirmation email");
     let base_url = format!("{}:{}", config.app.base_url, config.app.port);
-    if send_confirmation_email(&email_client, &subscriber, &base_url, &token)
+    send_confirmation_email(&email_client, &subscriber, &base_url, &token).await?;
+    transaction
+        .commit()
         .await
-        .is_err()
-    {
-        return HttpResponse::InternalServerError().finish();
-    }
+        .context("Failed to commit SQL transaction")?;
 
-    match transaction.commit().await {
-        Ok(_) => {
-            info!("Transaction committed successfully");
-            HttpResponse::Ok().finish()
-        }
-        Err(e) => {
-            error!("Failed to commit transaction: {}", e);
-            HttpResponse::InternalServerError().finish()
-        }
-    }
+    Ok(HttpResponse::Ok().finish())
 }
 
 #[instrument(name = "Inserting a new subscriber", skip(transaction, subscriber))]
 async fn insert_subscriber(
     transaction: &mut Transaction<'_, Postgres>,
     subscriber: &NewSubscriber,
-) -> Result<String, sqlx::Error> {
+) -> Result<Uuid, sqlx::Error> {
     let id = Uuid::new_v4();
 
-    match sqlx::query!(
+    sqlx::query!(
         r#"
         INSERT INTO subscriptions (id, email, name, subscribed_at, status)
         VALUES ($1, $2, $3, $4, $5)
@@ -92,23 +110,10 @@ async fn insert_subscriber(
         Utc::now(),
         "pending_confirmation",
     )
-    // deref to get the actual connection as Transaction doesn't
-    // implement `Executor` directly
     .execute(&mut **transaction)
-    .await
-    {
-        Ok(_) => {
-            info!("Successfully saved customer details");
-        }
-        Err(e) => {
-            error!("Failed to execute query: {:?}", e);
-            return Err(e);
-        }
-    }
+    .await?;
 
-    let token = generate_subscription_token();
-    store_token(transaction, &id, &token).await?;
-    Ok(token)
+    Ok(id)
 }
 
 #[instrument(
@@ -137,20 +142,11 @@ async fn send_confirmation_email(
         confirmation_link
     );
 
-    let res = email_client
+    email_client
         .send_email(&subscriber.email, "Welcome!", &html_body, &text_body)
-        .await;
+        .await?;
 
-    match res {
-        Ok(_) => {
-            info!("Confirmation email sent successfully");
-            Ok(())
-        }
-        Err(e) => {
-            error!("Failed to send confirmation email: {:?}", e);
-            Err(e)
-        }
-    }
+    Ok(())
 }
 
 #[instrument(name = "Generating subscription token")]
@@ -170,8 +166,8 @@ async fn store_token(
     transaction: &mut Transaction<'_, Postgres>,
     subscriber_id: &Uuid,
     token: &str,
-) -> Result<(), sqlx::Error> {
-    match sqlx::query!(
+) -> Result<()> {
+    sqlx::query!(
         r#"
         INSERT INTO subscription_tokens (subscription_token, subscriber_id)
         VALUES ($1, $2)
@@ -180,15 +176,7 @@ async fn store_token(
         subscriber_id,
     )
     .execute(&mut **transaction)
-    .await
-    {
-        Ok(_) => {
-            info!("Subscription token stored successfully");
-            Ok(())
-        }
-        Err(e) => {
-            error!("Failed to store subscription token: {:?}", e);
-            Err(e)
-        }
-    }
+    .await?;
+
+    Ok(())
 }
